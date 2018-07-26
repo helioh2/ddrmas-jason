@@ -1,0 +1,15 @@
+MAS ex3_bikakis {
+
+	infrastructure: Centralised
+
+	agents:
+		peerC1 [verbose=1]; //[intBels=sameFocus];
+		peerC2 [verbose=1];
+		peerC3 [verbose=1];
+		peerC4 [verbose=1];
+		peerC5 [verbose=1];
+		peerC6 [verbose=1];
+
+	aslSourcePath:
+		"src/asl";
+}

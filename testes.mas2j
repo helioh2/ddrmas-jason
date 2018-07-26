@@ -1,0 +1,10 @@
+MAS ex3_bikakis {
+
+	infrastructure: Centralised
+
+	agents:
+		test;
+
+	aslSourcePath:
+		"src/asl";
+}
