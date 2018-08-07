@@ -1,0 +1,16 @@
+MAS ex3_bikakis {
+
+	infrastructure: Centralised
+
+	agents:
+		hunterA [verbose=1]; //[intBels=sameFocus];
+		hunterB [verbose=1];
+		hunterC [verbose=1];
+		hunterD [verbose=1];
+		hunterE [verbose=1];
+		common_sense_agent [verbose=1];
+		leader [verbose=1];
+		
+	aslSourcePath:
+		"src/asl";
+}
