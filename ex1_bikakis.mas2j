@@ -8,7 +8,6 @@ MAS ex3_bikakis {
 		hunterC [verbose=1];
 		hunterD [verbose=1];
 		hunterE [verbose=1];
-		common_sense_agent [verbose=1];
 		leader [verbose=1];
 		
 	aslSourcePath:

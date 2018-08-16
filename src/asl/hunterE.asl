@@ -2,6 +2,7 @@
 
 //{ include("inc/generic_hunter.asl")}
 { include("inc/p2p_dr.asl")}
+{ include("common_sense_agent.asl") }
 /* Initial beliefs and rules */
 
 context(hunterE).
@@ -14,7 +15,7 @@ defeasible_rule(l51, hunterE, springtime_amanita(M)[source(hunterE)],
 	~has_annulus(M)[source(hunterE)]
 ]).
 
-pref(hunterE, [common_sense_agent, leader, hunterA, hunterB, hunterC, hunterD]).
+pref(hunterE, [leader, hunterA, hunterB, hunterC, hunterD]).
 
 /* Initial goals */
 

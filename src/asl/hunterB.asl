@@ -2,13 +2,14 @@
 
 //{ include("inc/generic_hunter.asl")}
 { include("inc/p2p_dr.asl")}
+{ include("common_sense_agent.asl") }
 
 /* Initial beliefs and rules */
 
 context(hunterB).
-mapping_rule(m21,hunterB, ~edible(M)[source(hunterB)], [has_volva(M)[source(any)]]).
+mapping_rule(m21,hunterB, ~edible(M)[source(hunterB)], [has_volva(M)[source(hunterB)]]).
 
-pref(hunterB, [common_sense_agent, leader, hunterE, hunterA, hunterC, hunterD]).
+pref(hunterB, [hunterE, hunterA, hunterC, hunterD]).
 
 
 /* Initial goals */

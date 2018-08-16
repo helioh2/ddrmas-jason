@@ -1,25 +1,13 @@
 // Agent hunterA in project mushroom_hunters
 
-{ include("inc/p2p_dr.asl")}
 
 /* Initial beliefs and rules */
 
 
-context(common_sense_agent).
+strict_rule(lcs1, self, amanita(M)[source(self)], [springtime_amanita(M)[source(self)]]).
+//se houver mapping rule como common sense, pode dar loops e overheads
+//mas por que eu precisaria de mapping rules no common sense?
 
-strict_rule(lcs1, common_sense_agent, amanita(M), [springtime_amanita(M)]).
-
-pref(common_sense_agent, [hunterA, leader, hunterE, hunterB, hunterC, hunterD]).
-
-/* Initial goals */
-
-!start.
-
-/* Plans */
-
-+!start : true <- .print("hello world.").
-
-{ include("$jacamoJar/templates/common-cartago.asl") }
 //{ include("$jacamoJar/templates/common-moise.asl") }
 
 // uncomment the include below to have an agent compliant with its organisation

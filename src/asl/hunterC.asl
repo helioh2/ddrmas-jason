@@ -2,13 +2,14 @@
 
 //{ include("inc/generic_hunter.asl")}
 { include("inc/p2p_dr.asl")}
+{ include("common_sense_agent.asl") }
 /* Initial beliefs and rules */
 
 context(hunterC).
 
 mapping_rule(m31,hunterC, edible(M)[source(hunterC)], [springtime_amanita(M)[source(any)]]).
 
-pref(hunterC, [common_sense_agent, leader, hunterE, hunterB, hunterA, hunterD]).
+pref(hunterC, [leader, hunterE, hunterB, hunterA, hunterD]).
 
 
 /* Initial goals */

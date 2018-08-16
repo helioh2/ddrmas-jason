@@ -2,6 +2,7 @@
 
 { include("$jacamoJar/templates/common-cartago.asl") }
 { include("inc/p2p_dr.asl")}
+{ include("common_sense_agent.asl") }
 /* 
  * oi, meu nome é Helio Henrique. Digo que sou ante-paioso, mas poucos sabem que, na verdade, sou o maior paioso que já existiu
  * 
