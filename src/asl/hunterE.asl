@@ -1,6 +1,3 @@
-// Agent hunterA in project mushroom_hunters
-
-//{ include("inc/generic_hunter.asl")}
 { include("inc/p2p_dr.asl")}
 { include("common_sense_agent.asl") }
 /* Initial beliefs and rules */
@@ -24,9 +21,3 @@ pref(hunterE, [leader, hunterA, hunterB, hunterC, hunterD]).
 /* Plans */
 
 +!start2 : true <- .print("hello world from hunter E.").
-
-//{ include("$jacamoJar/templates/common-cartago.asl") }
-//{ include("$jacamoJar/templates/common-moise.asl") }
-
-// uncomment the include below to have an agent compliant with its organisation
-//{ include("$moiseJar/asl/org-obedient.asl") }
