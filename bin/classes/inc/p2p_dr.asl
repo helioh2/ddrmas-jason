@@ -244,23 +244,35 @@ rule_id(1).
 		if (supported(Q,C,SSn)) {
 			if (not(stronger(SSn,SS,T))) {	
 				.print("Suporte de P não é mais fraco que suporte de ~P. Respondendo provable: ", P);	
-				.send(C0, tell, provable(P,C,SS,Z));					
+				!answer_provable(P,C,SS,Z,C0);					
 			} else {	
 				.print("Suporte de P é mais fraco que suporte de ~P. Respondendo não provable: ", P);
-				.send(C0, tell, ~provable(P,C,SSn,Z));							
+				!answer_not_provable(P,C,SSn,Z,C0);						
 			};
 		} else {	
 			.print("~P não tem suporte. Respondendo provable: ", P);
-			.send(C0, tell, provable(P,C,SS,Z));					
+			!answer_provable(P,C,SS,Z,C0);				
 		};	
 	} else {
 		.print("P não é suportado. Respondendo não provable: ", P);
-		.send(C0, tell, ~provable(P,C,[],Z));			
+		!answer_not_provable(P,C,[],Z,C0);			
 	};
 	!clear(C,P,C0);
 	-waiting_p2p_response(P,C0,Z).
 
-
++!answer_provable(P,C,SS,Z,C0): true <-
+	if (C == C0) {
+		+provable(P,C,SS,Z);
+	} else {
+		.send(C0, tell, provable(P,C,SS,Z));
+	}.
+	
++!answer_not_provable(P,C,SS,Z,C0): true <-
+	if (C == C0) {
+		+~provable(P,C,SS,Z);
+	} else {
+		.send(C0, tell, ~provable(P,C,SS,Z));
+	}.
 
 @clr
 +!clear(C,P,C0) : true <-

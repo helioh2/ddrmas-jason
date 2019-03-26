@@ -1,6 +1,6 @@
 MAS ex3_bikakis {
 
-	infrastructure: Centralised
+	infrastructure: Jade
 
 	agents:
 		hunterA [verbose=1]; //[intBels=sameFocus];
