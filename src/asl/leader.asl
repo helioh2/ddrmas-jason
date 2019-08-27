@@ -10,7 +10,7 @@
  * Based on implementation developed by Rafael Bordini, Jomi Hubner and Maicon Zatelli
  */
 
-context(leader).
+agent(leader).
 
 max_catching(5).
 

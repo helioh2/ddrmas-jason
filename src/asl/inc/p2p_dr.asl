@@ -19,12 +19,12 @@ rule_id(1).
 		!p2p_dr(P,C,C)[for_literal(P)].
 
 /* Planos de ação de consulta incluindo foco */
-+!p2p_dr_with_focus_rules(P,C0,C,Ps,Z): true <-
-		+focus_rules(P,C0,Ps);
++!p2p_dr_with_focus_rules(P,C0,C,Rf,Z): true <-
+		+focus_rules(P,C0,Rf);
 		!p2p_dr(P,C0,C,Z).
 		
-+focus_rules(P,C,Ps) : true <-
-		for (.member(L,Ps)) {
++focus_rules(P,C,Rf) : true <-
+		for (.member(L,Rf)) {
 			if (not(strict_rule(_,_L,_)[focus_rule(P)])) {
 				?rule_id(IDN);
 				.concat("tr",IDN,ID);
@@ -95,7 +95,7 @@ rule_id(1).
 	        		if (K2 == C | K2 == self){
 	        			!p2p_dr(B,C,C,P);  // consulta ao próprio contexto
 	        		} else {
-	        			!ask_other_context(B,C,K2,P)
+	        			!ask_other_agent(B,C,K2,P)
 	        		};
 	        	}
 	        };            
@@ -115,8 +115,8 @@ rule_id(1).
 	}.
 
 +!ask_other_context(B,C,K,P): true <-
-	if ((focus_rules(P,_,Ps) | (.negate(P,Q) & focus_rules(Q,_,Ps)))) {
-		.send(K, achieve, p2p_dr_with_focus_rules(B,C,K,Ps,P));
+	if ((focus_rules(P,_,Rf) | (.negate(P,Q) & focus_rules(Q,_,Rf)))) {
+		.send(K, achieve, p2p_dr_with_focus_rules(B,C,K,Rf,P));
 	} else {
 		.send(K, achieve, p2p_dr(B,C,K,P));
 	}.
@@ -136,26 +136,26 @@ rule_id(1).
 /* Este plano é disparado quando chega uma resposta de consulta (não provable para B) feita especificamente para K	
    A lista de termos do waiting_for_support_return é então esvaziada (pois se um termo não é provable, já invalida a regra) */
 @pv2[atomic]
-+~provable(B,Q,SS,P)[source(K)]: context(C) & waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) & not(waiting_for_support_from_arbitrary_context(B,Q)) & (Q==K | K==self) <-  
++~provable(B,Q,SS,P)[source(K)]: agent(C) & waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) & not(waiting_for_support_from_arbitrary_agent(B,Q)) & (Q==K | K==self) <-  
 	-waiting_for_support_return(R,P,C,Bs,1);
 	+waiting_for_support_return(R,P,C,[],2).
 
 
 /* Os três planos a seguir tratam as respostas das concultas no caso de um termo ter sido 
-   consultado a vários contextos (any)
-   O raciocínio só segue quando todos os contextos responderem. */
+   consultado a vários agentos (any)
+   O raciocínio só segue quando todos os agentos responderem. */
 @pv3[atomic]	
-+~provable(B,Q,SS,P)[source(K)]: context(C) & waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) & waiting_for_support_from_arbitrary_context(B,Q) <-
-	!evaluate_from_many_contexts(B,Q).
++~provable(B,Q,SS,P)[source(K)]: agent(C) & waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) & waiting_for_support_from_arbitrary_agent(B,Q) <-
+	!evaluate_from_many_agents(B,Q).
 	
 @pv4[atomic]
-+provable(B,Q,SS,P)[source(K)]: context(C) & waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) & waiting_for_support_from_arbitrary_context(B,Q) <-
-	!evaluate_from_many_contexts(B,Q).
++provable(B,Q,SS,P)[source(K)]: agent(C) & waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) & waiting_for_support_from_arbitrary_agent(B,Q) <-
+	!evaluate_from_many_agents(B,Q).
 
 @pvaux[atomic]
-+!evaluate_from_many_contexts(B,K) : waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) <-
-	-waiting_for_support_from_arbitrary_context(B,K);
-	if (not(waiting_for_support_from_arbitrary_context(B,_))) { //Se todas as consultas sobre B já foram respondidas, então segue adiante 
++!evaluate_from_many_agents(B,K) : waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) <-
+	-waiting_for_support_from_arbitrary_agent(B,K);
+	if (not(waiting_for_support_from_arbitrary_agent(B,_))) { //Se todas as consultas sobre B já foram respondidas, então segue adiante 
 		-waiting_for_support_return(R,P,C,Bs,1);
 		if (not(provable(B,_,_,P))) { 
 			+waiting_for_support_return(R,P,C,[],2);
@@ -289,15 +289,15 @@ rule_id(1).
 
 /* Rules: */
 
-known_context(A) :- pref(C,T) & .member(A,T).
-known_context(A) :- context(A).
-strict_rule(Name,Context,Head[source(Context)],[]) :- focus_rule(Name, Context, Head).
-//strict_rule(Name,Context,Head[source(Context)],[]) :- .print("Adding focus_rule locally") & focus_rules(Lit, Context, Heads) & .member(Head,Heads).
+known_agent(A) :- pref(C,T) & .member(A,T).
+known_agent(A) :- agent(A).
+strict_rule(Name,agent,Head[source(Agent)],[]) :- focus_rule(Name, Agent, Head).
+//strict_rule(Name,Agent,Head[source(Agent)],[]) :- .print("Adding focus_rule locally") & focus_rules(Lit, Agent, Heads) & .member(Head,Heads).
 
-supportive_rule(Name,Context,Head,Body) :- .print("r3") & strict_rule(Name,Context,Head,Body).
-supportive_rule(Name,Context,Head,Body) :- .print("r4") & defeasible_rule(Name,Context,Head,Body).
-supportive_rule(Name,Context,Head,Body) :- .print("r5 ", Name) & mapping_rule(Name,Context,Head,Body).
-not_strict_supportive_rule(Name,Context,Head,Body) :- .print("r6") & supportive_rule(Name,Context,Head,Body) & not(strict_rule(Name,Context,Head,Body)).
+supportive_rule(Name,Agent,Head,Body) :- .print("r3") & strict_rule(Name,Agent,Head,Body).
+supportive_rule(Name,Agent,Head,Body) :- .print("r4") & defeasible_rule(Name,Agent,Head,Body).
+supportive_rule(Name,Agent,Head,Body) :- .print("r5 ", Name) & mapping_rule(Name,Agent,Head,Body).
+not_strict_supportive_rule(Name,Agent,Head,Body) :- .print("r6") & supportive_rule(Name,Agent,Head,Body) & not(strict_rule(Name,Agent,Head,Body)).
 
 locally(X,C) :- .print("r7") & strict_rule(R,C,X,L) & locally_provable(L,C). //locally se é strict e corpo é locally_provable em C
 

@@ -2,7 +2,7 @@
 { include("common_sense_agent.asl") }
 /* Initial beliefs and rules */
 
-agent(hunterE).
+context(hunterE).
 
 defeasible_rule(l51, hunterE, springtime_amanita(M)[source(hunterE)], 
 	[has_volva(M)[source(hunterE)], 

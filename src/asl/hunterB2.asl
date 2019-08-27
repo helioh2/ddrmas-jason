@@ -6,10 +6,10 @@
 
 /* Initial beliefs and rules */
 
-agent(hunterB).
-mapping_rule(m21,hunterB, ~edible(M)[source(hunterB)], [has_volva(M)[source(hunterB)]]).
+context(hunterB).
+mapping_rule(m21, hunterB, ~edible(M)[source(hunterB)], [has_volva(M)[source(hunterB)]]).
 
-pref(hunterB, [hunterE, hunterA, hunterC, hunterD]).
+pref(hunterB, [leader, hunterE, hunterA, hunterC, hunterD]).
 
 
 /* Initial goals */

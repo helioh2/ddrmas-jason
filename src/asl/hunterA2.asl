@@ -1,24 +1,24 @@
 // Agent hunterA in project mushroom_hunters
 
 //{ include("inc/generic_hunter.asl")}
-{ include("inc/p2p_dr.asl")}
+{ include("inc/p2p_dr2.asl")}
 { include("common_sense_agent.asl") }
 
 /* Initial beliefs and rules */
 
-agent(hunterA).
+context(hunterA).
 
 mapping_rule(l11,hunterA,~edible(M)[source(hunterA)],[destroying_angel(M)[source(any)]]).
 mapping_rule(l12,hunterA,~edible(M)[source(hunterA)],[death_cap(M)[source(any)]]).
 mapping_rule(l13,hunterA,edible(M)[source(hunterA)],[caesar_mushroom(M)[source(any)]]).
 
 //focus_rules (simulation)
-focus_rule(p11,hunterA, mushroom(m1)).
-focus_rule(p12,hunterA,has_volva(m1)).
-focus_rule(p13,hunterA,pale_brownish_cap(m1)).
-focus_rule(p14,hunterA,patches(m1)).
-focus_rule(p15,hunterA,cup_margin_lined(m1)).
-focus_rule(p16,hunterA,~has_annulus(m1)).
+focus_rule(p11,hunterA, mushroom(m1),[]).
+focus_rule(p12,hunterA,has_volva(m1),[]).
+focus_rule(p13,hunterA,pale_brownish_cap(m1),[]).
+focus_rule(p14,hunterA,patches(m1),[]).
+focus_rule(p15,hunterA,cup_margin_lined(m1),[]).
+focus_rule(p16,hunterA,~has_annulus(m1),[]).
 
 mapping_rule(m11,hunterA, 
 	can_collect(M, hunterA)[source(hunterA)], 
@@ -45,6 +45,6 @@ pref(hunterA, [leader, hunterE, hunterB, hunterC, hunterD]).
 			-+focus_rules(C,[P|Rf]);
 		};
 		?focus_rules(C,Rf);
-		!p2p_dr_with_focus_rules(edible(m1), hunterA, hunterA, Rf, edible(m1)).
+		!p2p_dr_d(edible(m1), hunterA, hunterA, Rf, [], edible(m1)).
 
 	

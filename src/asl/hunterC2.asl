@@ -5,9 +5,9 @@
 { include("common_sense_agent.asl") }
 /* Initial beliefs and rules */
 
-agent(hunterC).
+context(hunterC).
 
-mapping_rule(m31,hunterC, edible(M)[source(hunterC)], [springtime_amanita(M)[source(any)]]).
+mapping_rule(m31, hunterC, edible(M)[source(hunterC)], [springtime_amanita(M)[source(any)]]).
 
 pref(hunterC, [leader, hunterE, hunterB, hunterA, hunterD]).
 
