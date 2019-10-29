@@ -70,7 +70,7 @@ context_id(1).
 +!query(CId,P)[source(A0)]: not(locally(CId,P)) & not(support_finished(CId,P)) <-
 		+query_context(CId,A0,P);
 		.print("Calling support for the literal. ",P);
-		+waiting_support_for(CId, P);  //!!! DESENVOLVER FORMA DE EVITAR SUPPORTS ATROPELADOS PARA O MESMO CARA.
+//		+waiting_support_for(CId, P);  //!!! DESENVOLVER FORMA DE EVITAR SUPPORTS ATROPELADOS PARA O MESMO CARA.
 		!support(CId,P).
 //		.negate(P,Q);
 //		!support(CId,P);
@@ -103,9 +103,13 @@ context_id(1).
 /* Consulta aos agentos conhecidos */
 +!ask_all_known_agents(CId,B): true <-
 	.findall(Ag, known_agent(Ag), L);
-	.my_name(Me);
-	+waiting_for_support_from_arbitrary_agents(CId,B,[Me|L]);  //talvez otimizar usando somente contagem
-    .send(Me, achieve, query(CId,B));
+	if (not(query_context(CId,_,B))) {
+		.my_name(Me);
+		.send(Me, achieve, query(CId,B));
+		+waiting_for_support_from_arbitrary_agents(CId,B,[Me|L]);  //talvez otimizar usando somente contagem
+	} else {
+		+waiting_for_support_from_arbitrary_agents(CId,B,L); 
+	}
     !ask_other_agent(CId,B,L).
 
 +!ask_other_agent(CId,B,Ag): focus_rules(CId,Rf) <-
@@ -166,7 +170,13 @@ context_id(1).
 		waiting_for_support_return(CId,R,P,Bs,1)
 		& .member(B,Bs) 
 		& waiting_for_support_from_arbitrary_agents(CId,B,L)  <-
-	.delete(Ag, L, NL);
+	if (Ag == self) {
+		.my_name(Me);
+		.delete(Me, L, NL);
+	} else {
+		.delete(Ag, L, NL);
+	}
+	
 	-waiting_for_support_from_arbitrary_agents(CId,B,L);
 	+waiting_for_support_from_arbitrary_agents(CId,B,NL);
 	!evaluate_from_many_agents_when_everyone_answered(B,Ag).
