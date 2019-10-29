@@ -7,7 +7,7 @@
 
 agent(hunterC).
 
-mapping_rule(m31,hunterC, edible(M)[source(hunterC)], [springtime_amanita(M)[source(any)]]).
+rule(m31,hunterC, edible(M)[source(hunterC)], [springtime_amanita(M)[source(any)]]) [rule_type(mapping), context(any)].
 
 pref(hunterC, [leader, hunterE, hunterB, hunterA, hunterD]).
 

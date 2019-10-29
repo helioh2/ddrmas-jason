@@ -4,7 +4,7 @@
 /* Initial beliefs and rules */
 
 
-strict_rule(lcs1, self, amanita(M)[source(self)], [springtime_amanita(M)[source(self)]]).
+rule(lcs1, self, amanita(M)[source(self)], [springtime_amanita(M)[source(self)]]) [rule_type(strict)].
 //se houver mapping rule como common sense, pode dar loops e overheads
 //mas por que eu precisaria de mapping rules no common sense?
 

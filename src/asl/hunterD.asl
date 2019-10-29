@@ -5,7 +5,7 @@
 
 agent(hunterD).
 
-mapping_rule(m41,hunterD, ~edible(M)[source(hunterD)], [amanita(M)[source(any)]]).
+rule(m41,hunterD, ~edible(M)[source(hunterD)], [amanita(M)[source(any)]]) [rule_type(mapping), context(any)].
 
 pref(hunterD, [leader, hunterE, hunterB, hunterC, hunterA]).
 

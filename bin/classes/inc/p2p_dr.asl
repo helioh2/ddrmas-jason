@@ -1,4 +1,5 @@
 rule_id(1).
+context_id(1).
 
 /* Initial goals */
 
@@ -6,308 +7,349 @@ rule_id(1).
 
 /* Plans */
 
-+!start : true <- .print("hello world from p2p_dr module.").
++!new_query_context(ID): true <-
+	?context_id(IDN);
+	.concat("c", IDN, ID);
+	-+context_id(IDN+1);
+	+context(ID).
 
-+!p2p_dr_front(P,C) : true <-
-		.print("Aqui");
-		?locally(P,C);
-		.print("True");
-		+P.
++!pack_focus_rules(Rf): true <-
+	.findall(rule(R,A,H,B)[rule_type(T), context(CId)], focus_rule(R,A,H,B)[rule_type(T)], Rf).
 
--!p2p_dr_front(P,C) : true <-
-		.print("Aqui 2");
-		!p2p_dr(P,C,C)[for_literal(P)].
++!start : true <- .print("hello world from query module.").
 
-/* Planos de ação de consulta incluindo foco */
-+!p2p_dr_with_focus_rules(P,C0,C,Rf,Z): true <-
-		+focus_rules(P,C0,Rf);
-		!p2p_dr(P,C0,C,Z).
+
+/* Planos de aÃ§Ã£o de consulta incluindo foco */
++!query_with_focus_rules(CId,P,Rf)[source(A0)]: true <-
+	+focus_rules(CId,Rf);
+	!query(CId,P)[source(A0)].
+
++focus_rules(CId,Rf) : true <-
+	for (.member(R, Rf)) { +R; }.
 		
-+focus_rules(P,C,Rf) : true <-
-		for (.member(L,Rf)) {
-			if (not(strict_rule(_,_L,_)[focus_rule(P)])) {
-				?rule_id(IDN);
-				.concat("tr",IDN,ID);
-				-+rule_id(IDN+1);
-				+strict_rule(ID,C,L,[])[focus_rule(P)];		
-			}
-		}.		
-		
-/* Planos de ação: busca local	*/
-+!p2p_dr(P,C0,C,Z): locally(P,_) <-
-		 //se é provable pelas crenças locais (strict), acabou
-		 .print("Achou locally ", P);
-		+provable(P,C0,[C],Z).
+//+focus_rules(CId, RfH, RfB, RfT, Q) : true <-
+//		for (.range(I, 0, Q-1)) {
+//			.nth(I, RfH, H);
+//			.nth(I, RfB, B);
+//			.nth(I, RfT, T);
+//			if (not(rule(_,_,H,B)[context(CId), rule_type(T)])) {
+//				?rule_id(IDN);
+//				.concat("tr",IDN,ID);
+//				-+rule_id(IDN+1);
+//				?agent(A);
+//				+rule(ID,A,H,B)[context(CId), rule_type(T)];	
+//			}
+//		}.
 
-+!p2p_dr(P,C0,C,Z): .negate(P,Q) & locally(Q,_) <-
-		 //se é provable pelas crenças locais (strict), acabou
-		 .print("Achou locally oposto ",P);
-		+~provable(P,C0,[C],Z).		
 
-/* Planos de ação: busca suporte */
-+!p2p_dr(P,C0,C,Z): not(locally(P,_)) & support_finished(P) & .negate(P,Q) & support_finished(Q) <-
-		+waiting_p2p_response(P,C0,Z);
-		!return_to_caller(C,P).
+/* Planos de aÃ§Ã£o: busca local	*/
++!query(CId,P)[source(A0)]: locally(CId,P) <-
+	 //se Ã© provable pelas crenÃ§as locais (strict), acabou
+	 .print("Achou locally ", P);
+	 +query_context(CId,A0,P);		 
+	 +provable(P,[])[context(CId)];
+	 !return_to_caller(CId,P). 
 
-+!p2p_dr(P,C0,C,Z): supported(P,C,_) <-
-		+waiting_p2p_response(P,C0,Z);
-		!return_to_caller(C,P).
++!query(CId,P)[source(A0)]: .negate(P,Q) & locally(CId,Q) <-
+	 //se Ã© provable pelas crenÃ§as locais (strict), acabou
+	 .print("Achou locally oposto ",Q);
+	 +query_context(CId,A0,P);	
+	 +~provable(P,[])[context(CId)];
+	 !return_to_caller(CId,P).
 
-+!p2p_dr(P,C0,C,Z): not(locally(P,_)) & not(support_finished(P)) <-
-		+waiting_p2p_response(P,C0,Z);
+/* Planos de aÃ§Ã£o: busca suporte */
++!query(CId,P)[source(A0)]: not(locally(CId,P)) & support_finished(CId,P) & .negate(P,Q) & support_finished(CId,Q) <-
+	+query_context(CId,A0,P);
+	!return_to_caller(A,P).
+
+//+!query(CId,P,A0): supported(P,A,_) <-
+//		+query_context(CId,A0);
+//		+waiting_p2p_response(P,A0,Z); //???
+//		!return_to_caller(A,P).
+
++!query(CId,P)[source(A0)]: not(locally(CId,P)) & not(support_finished(CId,P)) <-
+		+query_context(CId,A0,P);
 		.print("Calling support for the literal. ",P);
-		!support(P,C).
+		+waiting_support_for(CId, P);  //!!! DESENVOLVER FORMA DE EVITAR SUPPORTS ATROPELADOS PARA O MESMO CARA.
+		!support(CId,P).
+//		.negate(P,Q);
+//		!support(CId,P);
+//		!support(CId,Q).
 
-/* Planos de ação: suporte	*/		
-+!support(P,C): supportive_rule(_,K,P,_) & (C==K | K==self) <-
-		for (supportive_rule(R,K,P,_)){
-             +waiting_for_support_return(R,P,C,[],0);
-             .print("Calling support for rule - ",R);
-             !support_aux(P,C,R);
-        }.
+/* Planos de aÃ§Ã£o: suporte	*/		
++!support(CId,P): rule(_,_,P,_)[context(C)] & (C == Cid | C == any) <-
+	for (rule(R,_,P,Body)[context(C)] & (C == Cid | C == any)){
+		+waiting_for_support_return(CId,R,P,Body,1);
+	    for (.member(B[source(Ag)], Body)){
+	    	!evaluate_body_member(CId,B,Ag);
+	    };            
+    }.
 
--!support(P,C): true <-
-		+support_finished(P);
-		.print("Support failed for ", P);
-		?rule_id(IDN);
-		.concat("tr",IDN,ID);
-		-+rule_id(IDN+1);
-		+waiting_for_support_return(ID,P,C,[],2).  // ???
+-!support(CId,P): true <-
+	+support_finished(P);
+	+~provable(P,[])[context(CId)];
+	.print("Support failed for ", P);
+	!return_to_caller(CId, P).
+
++!evaluate_body_member(CId,B,Ag): Ag == any <-
+	!ask_all_known_agents(CId,B).
 	
-+!support_aux(P,C,R): supportive_rule(R,K,P,Body) & (C==K | K==self) <-
-		.print("Trying support for rule ", R);
-		if (.empty(Body)) {
-			// se corpo da regra é vazio, então é uma regra aplicável (ver @apprule)
-			?waiting_for_support_return(R,P,C,Current,_);
-       		-+waiting_for_support_return(R,P,C,Current,1);
-		} else {		
-			for ( .member(B[source(K1)], Body) ){
-				// adiciona cada membro do corpo ao quarto parâmetro de waiting_for_support_return
-	             ?waiting_for_support_return(R,P,C,Current,_);	      
-	            -+waiting_for_support_return(R,P,C,[B[source(K1)]|Current],1);
-	        };   
-	        ?waiting_for_support_return(R,P,C,Current,_);
-	        for (.member(B[source(K2)], Body)){
-	        	.print("Asking support for ",B[source(K2)]) 
-	        	if (K2 == any) {
-	        		!ask_all_known_contexts(P,C,B);
-	        	} else {       
-	        		if (K2 == C | K2 == self){
-	        			!p2p_dr(B,C,C,P);  // consulta ao próprio contexto
-	        		} else {
-	        			!ask_other_agent(B,C,K2,P)
-	        		};
-	        	}
-	        };            
-        }.
++!evaluate_body_member(CId,B,Ag): .my_name(Me) & (Ag == Me | Ag == self) <-
+	!query(CId,B)[source(Me)].
 
-/* Consulta aos contextos conhecidos */
-+!ask_all_known_contexts(P,C,B): true <-
-	for (known_context(K)) {
-		if (not (K == C & P == B)) { // Risco de Loop???
-			+waiting_for_support_from_arbitrary_context(B,K);
-			if (K == C){
-	        	!p2p_dr(B,C,C,P);
-	        } else {
-	        	!ask_other_context(B,C,K,P);
-			};			
-		};
-	}.
++!evaluate_body_member(CId,B,Ag): .my_name(Me) & Ag \== any & Ag \== Me & Ag \== self  <-
+	!ask_other_agent(CId,B,Ag).
 
-+!ask_other_context(B,C,K,P): true <-
-	if ((focus_rules(P,_,Rf) | (.negate(P,Q) & focus_rules(Q,_,Rf)))) {
-		.send(K, achieve, p2p_dr_with_focus_rules(B,C,K,Rf,P));
-	} else {
-		.send(K, achieve, p2p_dr(B,C,K,P));
-	}.
+/* Consulta aos agentos conhecidos */
++!ask_all_known_agents(CId,B): true <-
+	.findall(Ag, known_agent(Ag), L);
+	.my_name(Me);
+	+waiting_for_support_from_arbitrary_agents(CId,B,[Me|L]);  //talvez otimizar usando somente contagem
+    .send(Me, achieve, query(CId,B));
+    !ask_other_agent(CId,B,L).
+
++!ask_other_agent(CId,B,Ag): focus_rules(CId,Rf) <-
+	.send(Ag, achieve, query_with_focus_rules(CId,B,Rf)).
+		
++!ask_other_agent(CId,B,Ag): not(focus_rules(CId,Rf)) <-
+	.send(Ag, achieve, query(CId,B)).
 
 
-/* Planos de ação para tratamento de resposta às consultas */
+/* Planos de aÃ§Ã£o para tratamento de resposta Ã s consultas */
 
-/* Este plano é disparado quando chega uma resposta de consulta (provable para B) feita especificamente para K
-   B é então removido da lista de termos do waiting_for_support_return  */
+/* Este plano Ã© disparado quando chega uma resposta de consulta (provable para B) feita especificamente para K
+   B Ã© entÃ£o removido da lista de termos do waiting_for_support_return  */
+   
 @pv1[atomic]
-+provable(B,Q,SS,P)[source(K)]: context(C) & waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) & not(waiting_for_support_from_arbitrary_context(B,Q)) & (Q==K | K==self) <-
++provable(B,SS)[source(Ag), context(CId)]: 
+		waiting_for_support_return(CId,R,P,Bs,1) 
+		& .member(B,Bs) 
+		& not(waiting_for_support_from_arbitrary_agents(CId,B,L)) <-
 	.delete(B,Bs,NBs);
-	-waiting_for_support_return(R,P,C,Bs,1);
-	+waiting_for_support_return(R,P,C,NBs,1).
+	-waiting_for_support_return(CId,R,P,Bs,1);
+	+waiting_for_support_return(CId,R,P,NBs,1);
+	-+provable(B, SS)[source(Ag), context(CId), chosen_to_support(P)].
 
 
-/* Este plano é disparado quando chega uma resposta de consulta (não provable para B) feita especificamente para K	
-   A lista de termos do waiting_for_support_return é então esvaziada (pois se um termo não é provable, já invalida a regra) */
+/* Este plano Ã© disparado quando chega uma resposta de consulta (nÃ£o provable para B) feita especificamente para K	
+   A lista de termos do waiting_for_support_return Ã© entÃ£o esvaziada (pois se um termo nÃ£o Ã© provable, jÃ¡ invalida a regra) */
 @pv2[atomic]
-+~provable(B,Q,SS,P)[source(K)]: agent(C) & waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) & not(waiting_for_support_from_arbitrary_agent(B,Q)) & (Q==K | K==self) <-  
-	-waiting_for_support_return(R,P,C,Bs,1);
-	+waiting_for_support_return(R,P,C,[],2).
++~provable(B,SS)[source(Ag), context(CId)]: 
+		waiting_for_support_return(CId,R,P,Bs,1) 
+		& .member(B,Bs) 
+		& not(waiting_for_support_from_arbitrary_agents(CId,B,L)) <-  
+	-waiting_for_support_return(CId,R,P,Bs,1);
+	+waiting_for_support_return(CId,R,P,[],2) .
 
 
-/* Os três planos a seguir tratam as respostas das concultas no caso de um termo ter sido 
-   consultado a vários agentos (any)
-   O raciocínio só segue quando todos os agentos responderem. */
-@pv3[atomic]	
-+~provable(B,Q,SS,P)[source(K)]: agent(C) & waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) & waiting_for_support_from_arbitrary_agent(B,Q) <-
-	!evaluate_from_many_agents(B,Q).
-	
+/* Os trÃªs planos a seguir tratam as respostas das concultas no caso de um termo ter sido 
+   consultado a vÃ¡rios agentos (any)
+   O raciocÃ­nio sÃ³ segue quando todos os agentos responderem. */
+
 @pv4[atomic]
-+provable(B,Q,SS,P)[source(K)]: agent(C) & waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) & waiting_for_support_from_arbitrary_agent(B,Q) <-
-	!evaluate_from_many_agents(B,Q).
++provable(B,SS)[source(Ag), context(CId)]: 
+		waiting_for_support_return(CId,R,P,Bs,1) 
+		& .member(B,Bs) 
+		& waiting_for_support_from_arbitrary_agents(CId,B,L) <-
+	!evaluate_from_many_agents(B,Ag).   
+   
+@pv3[atomic]	
++~provable(B,SS)[source(Ag), context(CId)]: 
+		waiting_for_support_return(CId,R,P,Bs,1) 
+		& .member(B,Bs) 
+		& waiting_for_support_from_arbitrary_agents(CId,B,L) <-
+	!evaluate_from_many_agents(B,Ag).   
+	
 
 @pvaux[atomic]
-+!evaluate_from_many_agents(B,K) : waiting_for_support_return(R,P,C,Bs,1) & .member(B,Bs) <-
-	-waiting_for_support_from_arbitrary_agent(B,K);
-	if (not(waiting_for_support_from_arbitrary_agent(B,_))) { //Se todas as consultas sobre B já foram respondidas, então segue adiante 
-		-waiting_for_support_return(R,P,C,Bs,1);
-		if (not(provable(B,_,_,P))) { 
-			+waiting_for_support_return(R,P,C,[],2);
-		} else { 
-			.delete(B,Bs,NBs);
-			+waiting_for_support_return(R,P,C,NBs,1);
-		};
-		
-	}.
-
-/* O plano de ação a seguir é disparado quando todos os termos do corpo da regra R
-   é avaliado e nenhum ~provable foi encontrado (flag 1)  */
-@apprule
-+waiting_for_support_return(R,P,C,[],1): supportive_rule(R,K,P,Body) & (C==K | K==self)   <-
-	+applicable_rule(R,P,C,[]);
-	.print("--- Regra aplicável encontrada para: ", P)
-	.print("Regra: ", R)
-	for (provable(B,Z,SSx,P) & .member(B,Body)) {
-		?applicable_rule(R,P,C,SSr);
-		.union([Z],SSr,X);
-		.union(SSx,X,Y);
-		-+applicable_rule(R,P,C,Y);
-	};
-	.print("Supportive set final da regra: ",SSr)
-	?applicable_rule(R,P,C,SSr);
-	if (not(supported(P,C,SS))) {	
-		+supported(P,C,SSr);
-	} else {
-		//se já existe regra aplicável para P, decide pela mais forte
-		?pref(C,T);
-		if (supported(P,C,SS) & stronger(SSr,SS,T)) {
-			-supported(P,C,SS);
-			+supported(P,C,SSr);
-		};
-	};
-	-waiting_for_support_return(R,P,C,[],1);
-	+waiting_for_support_return(R,P,C,[],2).
++!evaluate_from_many_agents(B,Ag) : 
+		waiting_for_support_return(CId,R,P,Bs,1)
+		& .member(B,Bs) 
+		& waiting_for_support_from_arbitrary_agents(CId,B,L)  <-
+	.delete(Ag, L, NL);
+	-waiting_for_support_from_arbitrary_agents(CId,B,L);
+	+waiting_for_support_from_arbitrary_agents(CId,B,NL);
+	!evaluate_from_many_agents_when_everyone_answered(B,Ag).
 	
-/* O plano de ação a seguir é disparado quando foi encontrada uma regra aplicável para P,
-   ou se o corpo da regra já foi avaliado e não for uma regrá aplicável	 */
-+waiting_for_support_return(R,P,C,[],2): true <- //supportive_rule(R,C,P,_) <-
-	.print("-- Encontrou regra aplicável (ou não encontrou): " , R);
-	-waiting_for_support_return(R,P,C,[],_);
++!evaluate_from_many_agents_when_everyone_answered(B,Ag):
+		waiting_for_support_from_arbitrary_agents(CId,B,NL)	& .empty(NL)
+		& ~provable(B,SS)[context(CId)] <-
+	-waiting_for_support_from_arbitrary_agents(CId,B,NL); 
+	-waiting_for_support_return(CId,R,P,Bs,1);
+	+waiting_for_support_return(CId,R,P,[],2).
+	
++!evaluate_from_many_agents_when_everyone_answered(B,Ag):
+		waiting_for_support_from_arbitrary_agents(CId,B,NL)	& .empty(NL)
+		& provable(B,SS)[context(CId)] <-
+	-waiting_for_support_from_arbitrary_agents(CId,B,NL);
+	.findall(provable(B,SS)[source(Ag), context(CId)], provable(B,SS)[source(Ag), context(CId)], Ans);
+	!find_strongest(Ans, provable(WB,WSS)[source(WAg), context(CId)]);
+//	-+provable(WB, WSS)[source(WAg), context(CId)];
+	-+provable(WB, WSS)[source(WAg), context(CId), chosen_to_support(P)];  //!!
+	.delete(B,Bs,NBs);
+	-waiting_for_support_return(CId,R,P,Bs,1);
+	+waiting_for_support_return(CId,R,P,NBs,1).		
+
+-!evaluate_from_many_agents_when_everyone_answered(B,Ag): true .
+
++!find_strongest(L,W): true <-
+	+strongest_sup_set(0);
+	+strongest(0);
+	for (.member(X,L) & X = provable(B,SS)) { //!!!
+		?strongest_sup_set(SSw);
+		?pref(T);
+		if (SSw == 0 | stronger(SS, SSw, T)) {
+			-+strongest_sup_set(SS);
+			-+strongest(X);
+		}
+	};
+	?strongest(X);
+	W = X.
+
+/* O plano de aÃ§Ã£o a seguir Ã© disparado quando todos os termos do corpo da regra R
+   Ã© avaliado e nenhum ~provable foi encontrado (flag 1)  */
+@apprule
++waiting_for_support_return(CId,R,P,[],1): 
+		rule(R,_,P,Body)[context(C)] & (C == Cid | C == any) <-
+	+applicable_rule(R,P,[]);
+	.print("--- Regra aplicÃ¡vel encontrada para: ", P);
+	.print("Regra: ", R);
+	for (provable(B, SSx)[source(Ag), context(CId), chosen_to_support(P)] & .member(B,Body)) {
+		?applicable_rule(R,P,SSr);
+		!update_applicable_rule(R,P,SSr,Ag,SSx);
+	};
+	?applicable_rule(R,P,SSr);
+	.print("Supportive set final da regra: ",SSr);
+	!check_supported(R,P,SSr);
+	-waiting_for_support_return(R,P,A,[],1);
+	+waiting_for_support_return(R,P,A,[],2).
+
++!update_applicable_rule(R,P,SSr,Ag,SSx): 
+		applicable_rule(R,P,SSr) 
+		& .my_name(Me) 
+		& Ag == Me <-
+	.union(SSr, SSx, SS);
+	-+applicable_rule(R,P,SS).
+	
++!update_applicable_rule(R,P,SSr,Ag,SSx): 
+		applicable_rule(R,P,SSr) 
+		& .my_name(Me) 
+		& Ag \== Me <-
+	-+applicable_rule(R,P,[Ag|SSx]).
+	
+@chk_sup1[atomic]
++!check_supported(R, P, SSr): not(supported(P,SS)) <-
+	+supported(P,SSr).
+
+@chk_sup2[atomic]
++!check_supported(R, P, SSr): 
+		supported(P,SS) 
+		& SS \== SSr 
+		& pref(T) 
+		& stronger(SSr,SS,T) <-
+	//se jÃ¡ existe regra aplicÃ¡vel para P, decide pela mais forte
+	-supported(P,SS);
+	+supported(P,SSr).
+
+	
+/* O plano de aÃ§Ã£o a seguir Ã© disparado quando foi encontrada uma regra aplicÃ¡vel para P,
+   ou se o corpo da regra jÃ¡ foi avaliado e nÃ£o for uma regrÃ¡ aplicÃ¡vel	 */
++waiting_for_support_return(CId,R,P,[],2): true <- //supportive_rule(R,A,P,_) <-
+	.print("-- Encontrou regra aplicÃ¡vel (ou nÃ£o encontrou): " , R);
+	-waiting_for_support_return(R,P,A,[],_);
 	+support_finished_aux(P);
-	for (waiting_for_support_return(S,P,C,Bs,Status) & (Status < 2)) {
-		.print("Existe processamento de suporte não terminado: ", S);
+	for (waiting_for_support_return(S,P,Bs,1)) {
+		.print("Existe processamento de suporte nÃ£o terminado: ", S);
 		-support_finished_aux(P);		
 	};
-	if (support_finished_aux(P)) {
-		.print("Processamento de suporte terminado para ", P);
-		+support_finished(P);
-		-support_finished_aux(P);	
-		if (not(supported(P,C,_))) { // se descobriu-se que não é suportado, retorna
-			!return_to_caller(C,P);
-		} else { // verifica término de support
-			!check_support_finished(P,C);
-		};		
+	?support_finished_aux(P);
+	.print("Processamento de suporte terminado para ", P);
+	+support_finished(CId,P);
+	-support_finished_aux(P);	
+	if (not(supported(P,_))) { // se descobriu-se que nÃ£o Ã© suportado, retorna
+		!return_to_caller(CId,P);
+	} else { // verifica tÃ©rmino de support negativo
+		!check_negated_support_finished(CId,P);
 	}.
 
-/* Planos de ação que verificam término do processamento do support para P */
+/* Planos de aÃ§Ã£o que verificam tÃ©rmino do processamento do support para P */
 	
-+!check_support_finished(P,C): .negate(P,Q) & (support_finished(P) & support_finished(Q))  <-
++!check_negated_support_finished(CId,P): .negate(P,Q) & support_finished(CId,Q)  <-
 	.print("Support terminado para ", P);
-	!return_to_caller(C,P).	
+	!return_to_caller(CId,P).	
 
-+!check_support_finished(P,C): .negate(P,Q) & support_finished(P) & not(support_finished(Q)) <-
-	.print("Chamando suporte para negação de ",P);
-	!support(Q,C).
++!check_negated_support_finished(CId,P): .negate(P,Q) & not(support_finished(CId,Q))  <-
+	.print("Support terminado para ", P);
+	!support(CId, Q).
+
+/* Planos de aÃ§Ã£o que retornam resultado da consulta: */
+
++!return_to_caller(CId,P): .negate(P,Q) & query_context(CId,A0,Q) <-
+	!return_to_caller_final(CId,A0,Q).
+
++!return_to_caller(CId,P): query_context(CId,A0,P) <-
+	!return_to_caller_final(CId,A0,P).	
+
++!return_to_caller_final(CId,A0,P): 
+		.negate(P,Q)
+		& supported(P,SS) 
+		& (not(supported(Q,SSn)) | (supported(Q,SSn) & not(stronger(SSn, SS)))) <-
+	!answer_provable(CId,P,SS,A0);
+    !clear(CId, A0, P).
+ 
++!return_to_caller_final(CId,A0,P): 
+		.negate(P,Q)
+		& (not(supported(P,A,SS)) 
+			| (
+				supported(Q,A,SSn) 
+				& 
+				(
+					not(supported(P,A,SS)) 
+					| (supported(P,A,SS) & not(stronger(SS, SSn)))
+				))) <-
+    !answer_not_provable(CId,P,SS,A0);
+    !clear(CId, A0, P).
+
++!answer_provable(CId,P,SS,A0): .my_name(Me) & Me == A0 <-
+	+provable(P,SS)[source(Me), context(CId)].
+
++!answer_provable(CId,P,SS,A0): .my_name(Me) & Me \== A0 <-
+	.send(A0, tell, provable(P,SS)[context(CId)]).
 	
-//+!check_support_finished(P,C):  .negate(P,Q) & not(support_finished(P) & support_finished(Q)) <- true.
-	
++!answer_not_provable(CId,P,SS,A0): .my_name(Me) & Me == A0 <-
+	+~provable(P,SS)[source(Me), context(CId)].
 
-/* Planos de ação que retornam resultado da consulta: */
-
-+!return_to_caller(C,P): .negate(P,Q) & waiting_p2p_response(Q,C0,Z) & not(waiting_p2p_response(P,C0,Z)) <-
-	!return_to_caller_aux(C,Q,C0).
-
-+!return_to_caller(C,P): waiting_p2p_response(P,C0,Z) <-
-	!return_to_caller_aux(C,P,C0).	
-
-+!return_to_caller_aux(C,P,C0): true <-
-	?pref(C,T);
-	?waiting_p2p_response(P,C0,Z);
-	if (supported(P,C,SS)) {
-		.negate(P,Q);
-		if (supported(Q,C,SSn)) {
-			if (not(stronger(SSn,SS,T))) {	
-				.print("Suporte de P não é mais fraco que suporte de ~P. Respondendo provable: ", P);	
-				!answer_provable(P,C,SS,Z,C0);					
-			} else {	
-				.print("Suporte de P é mais fraco que suporte de ~P. Respondendo não provable: ", P);
-				!answer_not_provable(P,C,SSn,Z,C0);						
-			};
-		} else {	
-			.print("~P não tem suporte. Respondendo provable: ", P);
-			!answer_provable(P,C,SS,Z,C0);				
-		};	
-	} else {
-		.print("P não é suportado. Respondendo não provable: ", P);
-		!answer_not_provable(P,C,[],Z,C0);			
-	};
-	!clear(C,P,C0);
-	-waiting_p2p_response(P,C0,Z).
-
-+!answer_provable(P,C,SS,Z,C0): true <-
-	if (C == C0) {
-		+provable(P,C,SS,Z);
-	} else {
-		.send(C0, tell, provable(P,C,SS,Z));
-	}.
-	
-+!answer_not_provable(P,C,SS,Z,C0): true <-
-	if (C == C0) {
-		+~provable(P,C,SS,Z);
-	} else {
-		.send(C0, tell, ~provable(P,C,SS,Z));
-	}.
++!answer_not_provable(CId,P,SS,A0): .my_name(Me) & Me \== A0 <-
+	.send(A0, tell, ~provable(P,SS)[context(CId)]).
 
 @clr
-+!clear(C,P,C0) : true <-
-	-waiting_p2p_response(P,C0);
-	-support_finished(P);
++!clear(CId, A0, P): true <-
+	-query_context(CId,A0,P);
+	-support_finished(CId,P);
 	.negate(P,Q);
-	-support_finished(Q);
-	-focus_rules(P,C0,_);
-	.abolish(strict_rule(_,_,_,_)[focus_rule(P)]);  //esquecimento
-	.abolish(~provable(_,_,_,P));
-	.abolish(~provable(_,_,_,P))
-	.
-
+	-support_finished(CId,Q);
+	if (not(query_context(CId,_,_))) {
+		.abolish(rule(_,_,_,_)[context(CId)]);  //esquecimento
+		.abolish(provable(P,_)[context(CId)]);
+		.abolish(~provable(P,_)[context(CId)]);
+		-focus_rules(CId,P);
+	}.
+	
 
 /* Rules: */
 
-known_agent(A) :- pref(C,T) & .member(A,T).
-known_agent(A) :- agent(A).
-strict_rule(Name,agent,Head[source(Agent)],[]) :- focus_rule(Name, Agent, Head).
-//strict_rule(Name,Agent,Head[source(Agent)],[]) :- .print("Adding focus_rule locally") & focus_rules(Lit, Agent, Heads) & .member(Head,Heads).
+known_agent(A) :- pref(T) & .member(A,T).
 
-supportive_rule(Name,Agent,Head,Body) :- .print("r3") & strict_rule(Name,Agent,Head,Body).
-supportive_rule(Name,Agent,Head,Body) :- .print("r4") & defeasible_rule(Name,Agent,Head,Body).
-supportive_rule(Name,Agent,Head,Body) :- .print("r5 ", Name) & mapping_rule(Name,Agent,Head,Body).
-not_strict_supportive_rule(Name,Agent,Head,Body) :- .print("r6") & supportive_rule(Name,Agent,Head,Body) & not(strict_rule(Name,Agent,Head,Body)).
+locally(CId,X) :- .print("r1") & rule(R,_,X,B)[rule_type(strict), context(CId)] & locally_provable(CId,B). //locally se Ã© strict e corpo Ã© locally_provable em A
+locally(CId,X) :- .print("r2") & rule(R,_,X,B)[rule_type(strict), context(any)] & locally_provable(CId,B). //locally se Ã© strict e corpo Ã© locally_provable em A
 
-locally(X,C) :- .print("r7") & strict_rule(R,C,X,L) & locally_provable(L,C). //locally se é strict e corpo é locally_provable em C
+locally_provable(CId,[]) :- .print("r3") & true.  //lista vazia sempre Ã© locally_provable (caso base)
+locally_provable(CId,[X|B]) :- .print("r4") & locally(CId,X) & locally_provable(CId,B). //uma lista de literais Ã© locally_provable se cada item Ã© locally
 
-locally_provable([],C) :- .print("r8") & true.  //lista vazia sempre é locally_provable (caso base)
-locally_provable([X1|X2],C) :- .print("r9") & locally(X1,C) & locally_provable(X2,C). //uma lista de literais é locally_provable se cada item é locally
-
-stronger(A,B,T,B) :- .print("r17") & weakest(A,A1,T) & weakest(B,B1,T) & weaker(A1,B1,T,A1).
-stronger(A,B,T,A) :- .print("r18") & weakest(A,A1,T) & weakest(B,B1,T) & weaker(A1,B1,T,B1).
+stronger(A,B,T,B) :- .print("r5") & weakest(A,A1,T) & weakest(B,B1,T) & weaker(A1,B1,T,A1).
+stronger(A,B,T,A) :- .print("r6") & weakest(A,A1,T) & weakest(B,B1,T) & weaker(A1,B1,T,B1).
 weakest([X],X,_) :- true.
-weakest([X|Tail],M,T) :- .print("r20") & weakest(Tail,M1,T) & weaker(X,M1,T,M).
-weaker(Y1,Y2,T,Y1) :- .print("r21") & .nth(Pos1,T,Y1) & .nth(Pos2,T,Y2) & Pos1>Pos2.
-weaker(Y1,Y2,T,Y2) :- .print("r22") & .nth(Pos1,T,Y1) & .nth(Pos2,T,Y2) & Pos2>Pos1.
+weakest([X|Tail],M,T) :- .print("r7") & weakest(Tail,M1,T) & weaker(X,M1,T,M).
+weaker(Y1,Y2,T,Y1) :- .print("r8") & .nth(Pos1,T,Y1) & .nth(Pos2,T,Y2) & Pos1>Pos2.
+weaker(Y1,Y2,T,Y2) :- .print("r9") & .nth(Pos1,T,Y1) & .nth(Pos2,T,Y2) & Pos2>Pos1.
 
