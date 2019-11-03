@@ -39,10 +39,9 @@ pref([leader, hunterE, hunterB, hunterC, hunterD]).
 /* Plans */
 
 +!start2 : true <- .print("hello world from hunter A.");
-		!new_query_context(CId);
-		!pack_focus_rules(Rf);	
+		
 		.my_name(A);
-		!query_with_focus_rules(CId, edible(m1), Rf)[source(A)]. // talvez tenha que ser [source(hunterA)]
+		!query_original(edible(m1))[source(hunterA)]. // talvez tenha que ser [source(hunterA)]
 
 
 

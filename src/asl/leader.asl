@@ -23,9 +23,11 @@ collected(hunterE,0).
 winning(none,0).
 
 rule(ll1, leader, max_achieved(A), [achieved_max_collected(A)]) [rule_type(strict)].
+
+
 achieved_max_collected(A) :- collected(A, X) & max_cathing(Y) & Y==X.
 
-pref(leader, [common_sense_agent, hunterA, hunterE, hunterB, hunterC, hunterD]).
+pref([hunterA, hunterE, hunterB, hunterC, hunterD]).
  
 
  
